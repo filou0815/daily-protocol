@@ -639,286 +639,143 @@
 </div>
 
 <script>
-  // ── Constants ────────────────────────────────────────────────────
-  const TODAY = new Date().toISOString().slice(0,10);
-  const SAVE_KEY='protocol_state', ASHWA_KEY='ashwa_cycle', HABIT_LOG_KEY='habit_log', LOW_STOCK_KEY='low_stock', FAST_KEY='fast_state', FAST_GOAL_KEY='fast_goal';
-  const ASHWA_ON_DAYS=56, ASHWA_OFF_DAYS=21;
-  const HABIT_IDS=['h-gym','h-meditation','h-duolingo','h-reading','h-gratitude'];
+const TODAY = new Date().toISOString().slice(0,10);
+const SAVE_KEY='protocol_state', ASHWA_KEY='ashwa_cycle', HABIT_KEY='habit_log', LOW_KEY='low_stock', FAST_KEY='fast_state';
+const ASHWA_ON=56, ASHWA_OFF=21;
+const HABITS=['h-gym','h-meditation','h-duolingo','h-reading','h-gratitude'];
+const GOALS=[12,14,16,18,20,24];
 
-  function ls(k,fb=null){try{const r=localStorage.getItem(k);return r?JSON.parse(r):fb;}catch{return fb;}}
-  function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v));}
-  function daysBetween(ds){return Math.floor((Date.now()-new Date(ds))/864e5);}
-  function lastNDays(n){const a=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(d.toISOString().slice(0,10));}return a;}
-  function pad(n){return String(n).padStart(2,'0');}
-  const TODAY = new Date().toISOString().slice(0, 10);
-  const SAVE_KEY = 'protocol_state';
-  const ASHWA_KEY = 'ashwa_cycle';
-  const ASHWA_ON_DAYS = 56;  // 8 weeks
-  const ASHWA_OFF_DAYS = 21; // 3 weeks (midpoint of 2–4)
+function gls(k,fb){try{const r=localStorage.getItem(k);return r!==null?JSON.parse(r):fb;}catch{return fb;}}
+function sls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function daysSince(ds){return Math.floor((Date.now()-new Date(ds))/86400000);}
+function pad2(n){return String(n).padStart(2,'0');}
+function last7(){const a=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(d.toISOString().slice(0,10));}return a;}
 
-  // ── Persist daily state ──────────────────────────────────────────
-  function saveState(){const c=[];document.querySelectorAll('.item.checked,.habit-item.checked').forEach(el=>{if(el.id)c.push(el.id);});lsSet(SAVE_KEY,{date:TODAY,checked:c});}
-  function restoreState(){const s=ls(SAVE_KEY);if(!s||s.date!==TODAY)return;s.checked.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.add('checked');const b=el.querySelector('.checkbox,.habit-checkbox');if(b)b.innerHTML='✓';});}
+document.getElementById('dateDisplay').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-  // ── Date display ─────────────────────────────────────────────────
-  const d = new Date();
-  document.getElementById('dateDisplay').textContent =
-    d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+function saveState(){const c=[];document.querySelectorAll('.item.checked,.habit-item.checked').forEach(el=>{if(el.id)c.push(el.id);});sls(SAVE_KEY,{date:TODAY,checked:c});}
+function restoreState(){const s=gls(SAVE_KEY,null);if(!s||s.date!==TODAY)return;s.checked.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.add('checked');const b=el.querySelector('.checkbox,.habit-checkbox');if(b)b.innerHTML='&#10003;';});}
 
-  // ── Progress bars ────────────────────────────────────────────────
-  const TOTAL_SUPPS = 14;
-  const TOTAL_HABITS = 5;
+function updateProgress(){
+  const sc=document.querySelectorAll('.item.checked').length;
+  const hc=document.querySelectorAll('.habit-item.checked').length;
+  const sp=Math.round(sc/14*100),hp=Math.round(hc/5*100);
+  const sf=document.getElementById('suppsFill');sf.style.width=sp+'%';sf.classList.toggle('complete',sp>=100);
+  document.getElementById('suppsText').textContent=sc+' / 14'+(sp>=100?' \u2713':'');
+  const hf=document.getElementById('habitsFill');hf.style.width=hp+'%';hf.classList.toggle('complete',hp>=100);
+  document.getElementById('habitsText').textContent=hc+' / 5'+(hp>=100?' \u2713':'');
+  document.getElementById('resetBtn').classList.toggle('visible',sc+hc>0);
+  ['morning','lunch','dinner','bedtime'].forEach(cls=>{
+    const block=document.querySelector('.'+cls);if(!block)return;
+    const btn=block.querySelector('.take-all-btn');if(!btn)return;
+    const items=block.querySelectorAll('.item:not(.ashwa-off-cycle)');
+    const all=items.length>0&&[...items].every(i=>i.classList.contains('checked'));
+    btn.classList.toggle('all-done',all);btn.textContent=all?'\u2713 Done':'Take All';
+  });
+  saveState();
+}
 
-  function updateProgress() {
-    const suppsChecked = document.querySelectorAll('.item.checked').length;
-    const habitsChecked = document.querySelectorAll('.habit-item.checked').length;
-    const suppsPct = Math.round((suppsChecked / TOTAL_SUPPS) * 100);
-    const habitsPct = Math.round((habitsChecked / TOTAL_HABITS) * 100);
+function toggle(el){if(el.classList.contains('ashwa-off-cycle'))return;el.classList.toggle('checked');el.querySelector('.checkbox').innerHTML=el.classList.contains('checked')?'&#10003;':'';updateProgress();}
+function takeAll(cls){const block=document.querySelector('.'+cls);const items=block.querySelectorAll('.item:not(.ashwa-off-cycle)');const all=[...items].every(i=>i.classList.contains('checked'));items.forEach(el=>{if(all){el.classList.remove('checked');el.querySelector('.checkbox').innerHTML='';}else{el.classList.add('checked');el.querySelector('.checkbox').innerHTML='&#10003;';}});updateProgress();}
+function resetAll(){document.querySelectorAll('.item.checked,.habit-item.checked').forEach(el=>{el.classList.remove('checked');const b=el.querySelector('.checkbox,.habit-checkbox');if(b)b.innerHTML='';});updateProgress();}
 
-    const sf = document.getElementById('suppsFill');
-    sf.style.width = suppsPct + '%';
-    sf.classList.toggle('complete', suppsPct >= 100);
-    document.getElementById('suppsText').textContent =
-      suppsChecked + ' / ' + TOTAL_SUPPS + (suppsPct >= 100 ? ' ✓' : '');
+function toggleHabit(el){
+  el.classList.toggle('checked');const done=el.classList.contains('checked');
+  el.querySelector('.habit-checkbox').innerHTML=done?'&#10003;':'';
+  const log=gls(HABIT_KEY,{});const id=el.id;if(!log[id])log[id]=[];
+  if(done){if(!log[id].includes(TODAY))log[id].push(TODAY);}else{log[id]=log[id].filter(d=>d!==TODAY);}
+  sls(HABIT_KEY,log);renderHabits();updateProgress();
+}
+function calcStreak(dates){if(!dates||!dates.length)return 0;const set=new Set(dates);let s=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(set.has(d.toISOString().slice(0,10)))s++;else break;}return s;}
+function renderHabits(){
+  const log=gls(HABIT_KEY,{});const week=last7();
+  HABITS.forEach(id=>{
+    const dates=log[id]||[];const streak=calcStreak(dates);
+    const sEl=document.getElementById('streak-'+id);const dEl=document.getElementById('dots-'+id);
+    if(sEl){if(streak>0){sEl.innerHTML='&#128293; '+streak+' day'+(streak!==1?'s':'');sEl.className='streak-badge';}else{sEl.textContent='No streak yet';sEl.className='streak-badge zero';}}
+    if(dEl){dEl.innerHTML='';week.forEach((day,i)=>{const dot=document.createElement('div');dot.className=dates.includes(day)?'week-dot done':(i===6?'week-dot today-empty':'week-dot');dEl.appendChild(dot);});}
+  });
+}
 
-    const hf = document.getElementById('habitsFill');
-    hf.style.width = habitsPct + '%';
-    hf.classList.toggle('complete', habitsPct >= 100);
-    document.getElementById('habitsText').textContent =
-      habitsChecked + ' / ' + TOTAL_HABITS + (habitsPct >= 100 ? ' ✓' : '');
+function toggleLowStock(e,id,name){
+  e.stopPropagation();const s=gls(LOW_KEY,{});
+  if(s[id])delete s[id];else s[id]=name;
+  sls(LOW_KEY,s);renderLowStock();
+}
+function renderLowStock(){
+  const s=gls(LOW_KEY,{});const names=Object.values(s);
+  const banner=document.getElementById('lowStockBanner');const list=document.getElementById('lowStockList');
+  banner.classList.toggle('visible',names.length>0);
+  list.innerHTML=names.map(n=>'<span class="low-stock-tag">'+n+'</span>').join('');
+  document.querySelectorAll('.low-stock-btn').forEach(btn=>{
+    const itemEl=btn.closest('.item');if(!itemEl)return;
+    const flagged=!!s[itemEl.id];btn.classList.toggle('flagged',flagged);
+    btn.textContent=flagged?'! low stock':'low stock';
+  });
+}
 
-    document.getElementById('resetBtn').classList.toggle('visible', suppsChecked + habitsChecked > 0);
-
-    // update Take All button states
-    ['morning','lunch','dinner','bedtime'].forEach(cls => {
-      const block = document.querySelector('.' + cls);
-      if (!block) return;
-      const btn = block.querySelector('.take-all-btn');
-      if (!btn) return;
-      const items = block.querySelectorAll('.item:not(.ashwa-off-cycle)');
-      const allDone = items.length > 0 && [...items].every(i => i.classList.contains('checked'));
-      btn.classList.toggle('all-done', allDone);
-      btn.textContent = allDone ? '✓ Done' : 'Take All';
-    });
-
-    saveState();
+let fastInt=null;
+function loadFast(){return gls(FAST_KEY,{active:false,startTime:null,goalHours:16});}
+function updateFastUI(){
+  const f=loadFast();
+  const tEl=document.getElementById('fastingTimer'),bEl=document.getElementById('fastingBadge');
+  const mBtn=document.getElementById('fastingMainBtn'),sLbl=document.getElementById('fastingStartLabel');
+  const gLbl=document.getElementById('fastingGoalLabel'),gFill=document.getElementById('fastingGoalFill');
+  const nEl=document.getElementById('fastingNote'),gDisp=document.getElementById('goalDisplay');
+  if(gLbl)gLbl.textContent='Goal: '+f.goalHours+'h';if(gDisp)gDisp.textContent=f.goalHours+'h';
+  if(!f.active||!f.startTime){
+    if(tEl){tEl.textContent='00:00:00';tEl.className='fasting-timer idle';}
+    if(bEl){bEl.textContent='IDLE';bEl.className='fasting-badge';}
+    if(mBtn){mBtn.textContent='Start Fast';mBtn.className='fasting-btn start';}
+    if(sLbl)sLbl.textContent='Not fasting';if(gFill)gFill.style.width='0%';if(nEl)nEl.textContent='';
+    if(fastInt){clearInterval(fastInt);fastInt=null;}return;
   }
+  const elapsed=Date.now()-f.startTime,gms=f.goalHours*3600000;
+  const pct=Math.min(100,Math.round(elapsed/gms*100)),hit=elapsed>=gms;
+  const h=Math.floor(elapsed/3600000),m=Math.floor((elapsed%3600000)/60000),sec=Math.floor((elapsed%60000)/1000);
+  if(tEl){tEl.textContent=pad2(h)+':'+pad2(m)+':'+pad2(sec);tEl.className='fasting-timer';}
+  if(bEl){bEl.textContent=hit?'GOAL HIT':'FASTING';bEl.className='fasting-badge active';}
+  if(mBtn){mBtn.textContent='Stop Fast';mBtn.className='fasting-btn stop';}
+  if(gFill){gFill.style.width=pct+'%';gFill.className='fasting-goal-fill'+(hit?' complete':'');}
+  if(sLbl)sLbl.textContent='Started '+new Date(f.startTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(nEl)nEl.textContent=hit?'Goal of '+f.goalHours+'h reached!':pct+'% to '+f.goalHours+'h goal';
+}
+function fastingAction(){const f=loadFast();f.active=!f.active;if(f.active)f.startTime=Date.now();else f.startTime=null;sls(FAST_KEY,f);updateFastUI();if(f.active)fastInt=setInterval(updateFastUI,1000);else if(fastInt){clearInterval(fastInt);fastInt=null;}}
+function changeGoal(){const f=loadFast();f.goalHours=GOALS[(GOALS.indexOf(f.goalHours)+1)%GOALS.length];sls(FAST_KEY,f);updateFastUI();}
 
-  // ── Toggle individual item ────────────────────────────────────────
-  function toggle(el) {
-    if (el.classList.contains('ashwa-off-cycle')) return;
-    el.classList.toggle('checked');
-    el.querySelector('.checkbox').innerHTML = el.classList.contains('checked') ? '✓' : '';
-    updateProgress();
+function renderAshwa(){
+  const data=gls(ASHWA_KEY,null);
+  const sEl=document.getElementById('ashwa-status'),cEl=document.getElementById('ashwa-countdown');
+  const btn=document.getElementById('ashwa-main-btn'),pw=document.getElementById('ashwa-prog-wrap');
+  const pf=document.getElementById('ashwa-prog-fill'),nEl=document.getElementById('ashwa-note');
+  const item=document.getElementById('s-ashwa');
+  if(!data){sEl.className='ashwa-status inactive';sEl.textContent='NO CYCLE';cEl.className='ashwa-countdown';cEl.textContent='Start a cycle to track';btn.className='ashwa-btn start-on';btn.textContent='Start ON Cycle';pw.style.display='none';nEl.textContent='8 weeks ON - 2-4 weeks OFF';item.classList.remove('ashwa-off-cycle');return;}
+  const elapsed=daysSince(data.startDate),total=data.phase==='on'?ASHWA_ON:ASHWA_OFF;
+  const remaining=Math.max(0,total-elapsed),pct=Math.min(100,Math.round(elapsed/total*100));
+  if(data.phase==='on'){
+    item.classList.remove('ashwa-off-cycle');sEl.className='ashwa-status on';sEl.textContent='ON CYCLE';cEl.className='ashwa-countdown';
+    if(remaining===0){cEl.textContent='8 weeks done - time for a break!';btn.className='ashwa-btn start-off';btn.textContent='Start OFF Cycle';nEl.textContent='Take 2-4 weeks off now';}
+    else{cEl.textContent=remaining+' days left in ON cycle';btn.className='ashwa-btn end-cycle';btn.textContent='End cycle early';nEl.textContent='Day '+elapsed+' of '+ASHWA_ON+' - '+pct+'% complete';}
+    pf.className='ashwa-progress-fill on';
+  }else{
+    item.classList.add('ashwa-off-cycle');sEl.className='ashwa-status off';sEl.textContent='OFF CYCLE';cEl.className='ashwa-countdown off';
+    if(remaining===0){cEl.textContent='Break done - ready to restart!';btn.className='ashwa-btn start-on';btn.textContent='Start ON Cycle';nEl.textContent='You can begin your next 8-week cycle';}
+    else{cEl.textContent=remaining+' days left in OFF cycle';btn.className='ashwa-btn end-cycle';btn.textContent='End break early';nEl.textContent='Day '+elapsed+' of '+ASHWA_OFF+' - Skip ashwagandha today';}
+    pf.className='ashwa-progress-fill off';
   }
+  pw.style.display='block';pf.style.width=pct+'%';
+}
+function ashwaAction(){
+  const data=gls(ASHWA_KEY,null),btn=document.getElementById('ashwa-main-btn');
+  if(!data){sls(ASHWA_KEY,{phase:'on',startDate:TODAY});}
+  else if(data.phase==='on'){const e=daysSince(data.startDate);if(e>=ASHWA_ON||btn.textContent.includes('Start OFF'))sls(ASHWA_KEY,{phase:'off',startDate:TODAY});else if(confirm('End ON cycle early after '+e+' days?'))sls(ASHWA_KEY,{phase:'off',startDate:TODAY});}
+  else{const e=daysSince(data.startDate);if(e>=ASHWA_OFF||btn.textContent.includes('Start ON'))sls(ASHWA_KEY,{phase:'on',startDate:TODAY});else if(confirm('End OFF break early after '+e+' days?'))sls(ASHWA_KEY,{phase:'on',startDate:TODAY});}
+  renderAshwa();updateProgress();
+}
 
-  function toggleHabit(el) {
-    el.classList.toggle('checked');
-    el.querySelector('.habit-checkbox').innerHTML = el.classList.contains('checked') ? '✓' : '';
-    const log=ls(HABIT_LOG_KEY,{});const id=el.id;if(!log[id])log[id]=[];
-    if(el.classList.contains('checked')){if(!log[id].includes(TODAY))log[id].push(TODAY);}
-    else{log[id]=log[id].filter(d=>d!==TODAY);}
-    lsSet(HABIT_LOG_KEY,log);renderHabitStats();updateProgress();
-  }
-
-  function renderHabitStats(){
-    const log=ls(HABIT_LOG_KEY,{});const week=lastNDays(7);
-    HABIT_IDS.forEach(id=>{
-      const dates=log[id]||[];const dateSet=new Set(dates);
-      let streak=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);if(dateSet.has(ds))streak++;else break;}
-      const badge=document.getElementById('streak-'+id);
-      if(badge){badge.textContent=streak>0?'🔥 '+streak+(streak===1?' day':' days'):'— 0 days';badge.classList.toggle('zero',streak===0);}
-      const dotsEl=document.getElementById('dots-'+id);
-      if(dotsEl){dotsEl.innerHTML='';week.forEach((day,i)=>{const dot=document.createElement('div');dot.className='week-dot';if(dateSet.has(day))dot.classList.add('done');else if(i===6)dot.classList.add('today-empty');dotsEl.appendChild(dot);});}
-    });
-  }
-
-  function toggleLowStock(e,name,btnId){
-    e.stopPropagation();
-    const low=ls(LOW_STOCK_KEY,[]);const idx=low.indexOf(name);
-    if(idx===-1)low.push(name);else low.splice(idx,1);
-    lsSet(LOW_STOCK_KEY,low);renderLowStock();
-  }
-  function renderLowStock(){
-    const low=ls(LOW_STOCK_KEY,[]);
-    document.querySelectorAll('.low-stock-btn').forEach(btn=>{
-      const m=btn.getAttribute('onclick').match(/'([^']+)','ls-/);
-      if(m){const isLow=low.includes(m[1]);btn.classList.toggle('low',isLow);btn.textContent=isLow?'Low stock':'Mark low stock';}
-    });
-    const banner=document.getElementById('lowStockBanner');const list=document.getElementById('lowStockList');
-    if(low.length>0){banner.classList.add('visible');list.innerHTML=low.map(n=>'• '+n).join('<br>');}
-    else{banner.classList.remove('visible');}
-  }
-
-  // Fasting
-  let fastingInterval=null;
-  function saveFastingGoal(){lsSet(FAST_GOAL_KEY,parseInt(document.getElementById('fastingGoal').value));}
-  function fastingStart(){lsSet(FAST_KEY,{startTime:Date.now()});tickFasting();fastingInterval=setInterval(tickFasting,1000);}
-  function fastingStop(){lsSet(FAST_KEY,null);clearInterval(fastingInterval);document.getElementById('fastingTimer').textContent='00:00:00';document.getElementById('fastingTimer').classList.remove('goal-reached');document.getElementById('fastingStatus').textContent='Fast ended';document.getElementById('fastingFill').style.width='0%';document.getElementById('fastingFill').classList.remove('done');document.getElementById('fastingStartBtn').className='fasting-btn start';document.getElementById('fastingStopBtn').className='fasting-btn disabled';}
-  function tickFasting(){
-    const state=ls(FAST_KEY);if(!state){fastingStop();return;}
-    const goal=ls(FAST_GOAL_KEY,16);document.getElementById('fastingGoal').value=goal;
-    const elapsed=Date.now()-state.startTime,goalMs=goal*3600000,pct=Math.min(100,elapsed/goalMs*100);
-    const hrs=Math.floor(elapsed/3600000),mins=Math.floor((elapsed%3600000)/60000),secs=Math.floor((elapsed%60000)/1000);
-    const timerEl=document.getElementById('fastingTimer');timerEl.textContent=pad(hrs)+':'+pad(mins)+':'+pad(secs);
-    const goalReached=elapsed>=goalMs;timerEl.classList.toggle('goal-reached',goalReached);
-    const remaining=Math.max(0,goalMs-elapsed),rh=Math.floor(remaining/3600000),rm=Math.floor((remaining%3600000)/60000);
-    document.getElementById('fastingStatus').textContent=goalReached?'🎉 Goal reached! '+pad(hrs)+'h '+pad(mins)+'m fasted':'Goal: '+goal+'h · '+rh+'h '+pad(rm)+'m remaining';
-    const fill=document.getElementById('fastingFill');fill.style.width=pct+'%';fill.classList.toggle('done',goalReached);
-    document.getElementById('fastingStartBtn').className='fasting-btn disabled';document.getElementById('fastingStopBtn').className='fasting-btn stop';
-  }
-  function initFasting(){const goal=ls(FAST_GOAL_KEY,16);document.getElementById('fastingGoal').value=goal;const state=ls(FAST_KEY);if(state&&state.startTime){tickFasting();fastingInterval=setInterval(tickFasting,1000);}}
-
-  // ── Take All button ───────────────────────────────────────────────
-  function takeAll(blockClass, btn) {
-    const block = document.querySelector('.' + blockClass);
-    const items = block.querySelectorAll('.item:not(.ashwa-off-cycle)');
-    const allDone = [...items].every(i => i.classList.contains('checked'));
-    items.forEach(el => {
-      if (allDone) {
-        el.classList.remove('checked');
-        el.querySelector('.checkbox').innerHTML = '';
-      } else {
-        el.classList.add('checked');
-        el.querySelector('.checkbox').innerHTML = '✓';
-      }
-    });
-    updateProgress();
-  }
-
-  // ── Reset all ────────────────────────────────────────────────────
-  function resetAll() {
-    document.querySelectorAll('.item.checked, .habit-item.checked').forEach(el => {
-      el.classList.remove('checked');
-      const box = el.querySelector('.checkbox, .habit-checkbox');
-      if (box) box.innerHTML = '';
-    });
-    updateProgress();
-  }
-
-  // ── Ashwagandha Cycle Tracker ────────────────────────────────────
-  function loadAshwa(){return ls(ASHWA_KEY);}
-  function saveAshwa(data){lsSet(ASHWA_KEY,data);}
-
-  function daysBetween(dateStr) {
-    const start = new Date(dateStr);
-    const now = new Date();
-    return Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  }
-
-  function renderAshwa() {
-    const data = loadAshwa();
-    const statusEl = document.getElementById('ashwa-status');
-    const countdownEl = document.getElementById('ashwa-countdown');
-    const mainBtn = document.getElementById('ashwa-main-btn');
-    const progWrap = document.getElementById('ashwa-prog-wrap');
-    const progFill = document.getElementById('ashwa-prog-fill');
-    const noteEl = document.getElementById('ashwa-note');
-    const ashwaItem = document.getElementById('s-ashwa');
-
-    if (!data) {
-      // No cycle started
-      statusEl.className = 'ashwa-status inactive';
-      statusEl.textContent = 'NO CYCLE';
-      countdownEl.className = 'ashwa-countdown';
-      countdownEl.textContent = 'Start a cycle to track';
-      mainBtn.className = 'ashwa-btn start-on';
-      mainBtn.textContent = 'Start ON Cycle';
-      progWrap.style.display = 'none';
-      noteEl.textContent = '8 weeks ON → 2–4 weeks OFF';
-      ashwaItem.classList.remove('ashwa-off-cycle');
-      return;
-    }
-
-    const elapsed = daysBetween(data.startDate);
-    const total = data.phase === 'on' ? ASHWA_ON_DAYS : ASHWA_OFF_DAYS;
-    const remaining = Math.max(0, total - elapsed);
-    const pct = Math.min(100, Math.round((elapsed / total) * 100));
-
-    if (data.phase === 'on') {
-      ashwaItem.classList.remove('ashwa-off-cycle');
-      statusEl.className = 'ashwa-status on';
-      statusEl.textContent = 'ON CYCLE';
-      countdownEl.className = 'ashwa-countdown';
-
-      if (remaining === 0) {
-        countdownEl.textContent = '⚠️ 8 weeks done — time for a break!';
-        mainBtn.className = 'ashwa-btn start-off';
-        mainBtn.textContent = 'Start OFF Cycle';
-        noteEl.textContent = 'Take 2–4 weeks off now';
-      } else {
-        countdownEl.textContent = remaining + ' days left in ON cycle';
-        mainBtn.className = 'ashwa-btn end-cycle';
-        mainBtn.textContent = 'End cycle early';
-        noteEl.textContent = 'Day ' + elapsed + ' of ' + ASHWA_ON_DAYS + ' · ' + pct + '% complete';
-      }
-      progFill.className = 'ashwa-progress-fill on';
-
-    } else {
-      // OFF phase
-      ashwaItem.classList.add('ashwa-off-cycle');
-      statusEl.className = 'ashwa-status off';
-      statusEl.textContent = 'OFF CYCLE';
-      countdownEl.className = 'ashwa-countdown off';
-
-      if (remaining === 0) {
-        countdownEl.textContent = '✓ Break done — ready to restart!';
-        mainBtn.className = 'ashwa-btn start-on';
-        mainBtn.textContent = 'Start ON Cycle';
-        noteEl.textContent = 'You can begin your next 8-week cycle';
-      } else {
-        countdownEl.textContent = remaining + ' days left in OFF cycle';
-        mainBtn.className = 'ashwa-btn end-cycle';
-        mainBtn.textContent = 'End break early';
-        noteEl.textContent = 'Day ' + elapsed + ' of ' + ASHWA_OFF_DAYS + ' · Skip ashwagandha today';
-      }
-      progFill.className = 'ashwa-progress-fill off';
-    }
-
-    progWrap.style.display = 'block';
-    progFill.style.width = pct + '%';
-  }
-
-  function ashwaAction() {
-    const data = loadAshwa();
-    const mainBtn = document.getElementById('ashwa-main-btn');
-
-    if (!data) {
-      // Start fresh ON cycle
-      saveAshwa({ phase: 'on', startDate: TODAY });
-    } else if (data.phase === 'on') {
-      const elapsed = daysBetween(data.startDate);
-      if (elapsed >= ASHWA_ON_DAYS || mainBtn.textContent.includes('Start OFF')) {
-        // Start OFF cycle
-        saveAshwa({ phase: 'off', startDate: TODAY });
-      } else {
-        // End early — confirm
-        if (confirm('End ON cycle early after ' + elapsed + ' days?')) {
-          saveAshwa({ phase: 'off', startDate: TODAY });
-        }
-      }
-    } else {
-      // OFF phase
-      const elapsed = daysBetween(data.startDate);
-      if (elapsed >= ASHWA_OFF_DAYS || mainBtn.textContent.includes('Start ON')) {
-        saveAshwa({ phase: 'on', startDate: TODAY });
-      } else {
-        if (confirm('End OFF break early after ' + elapsed + ' days?')) {
-          saveAshwa({ phase: 'on', startDate: TODAY });
-        }
-      }
-    }
-    renderAshwa();
-    updateProgress();
-  }
-
-  // ── Init ─────────────────────────────────────────────────────────
-  restoreState();
-  renderAshwa();
-  renderHabitStats();
-  renderLowStock();
-  initFasting();
-  updateProgress();
+restoreState();renderAshwa();renderLowStock();renderHabits();updateFastUI();
+if(loadFast().active)fastInt=setInterval(updateFastUI,1000);
+updateProgress();
 </script>
 </body>
 </html>
