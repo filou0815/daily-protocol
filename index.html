@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Protocol">
+<meta name="theme-color" content="#0F0F0F">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Daily Protocol</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0F0F0F;
+    color: #E8E4DF;
+    min-height: 100vh;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .container { max-width: 480px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    padding: 28px 0 22px;
+    border-bottom: 1px solid #2A2826;
+    margin-bottom: 24px;
+  }
+  .header-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 3.5px;
+    text-transform: uppercase; color: #8A8480; margin-bottom: 6px;
+  }
+  .header h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 30px; font-weight: 700; color: #F5F0EB; line-height: 1.1;
+  }
+  .header-sub { font-size: 12px; color: #8A8480; margin-top: 6px; }
+  .header-date {
+    display: inline-block; margin-top: 12px; font-size: 11px; font-weight: 600;
+    color: #C4BDB6; background: #1E1C1A; border: 1px solid #2A2826;
+    padding: 4px 14px; border-radius: 20px;
+  }
+
+  .progress-section { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .progress-row { display: flex; align-items: center; gap: 10px; }
+  .progress-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #6B6560; min-width: 62px; text-align: right;
+  }
+  .progress-bar { flex: 1; height: 6px; background: #2A2826; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; border-radius: 3px; transition: width 0.5s ease; }
+  .progress-fill.supps { background: #F59E0B; }
+  .progress-fill.supps.complete { background: #10B981; }
+  .progress-fill.habits { background: #34D399; }
+  .progress-fill.habits.complete { background: #10B981; }
+  .progress-text { font-size: 11px; font-weight: 600; color: #8A8480; min-width: 56px; }
+  .reset-btn {
+    font-size: 10px; color: #8A8480; background: none; border: none;
+    cursor: pointer; text-decoration: underline; padding: 0; display: none;
+  }
+  .reset-btn.visible { display: inline; }
+
+  .section-divider {
+    display: flex; align-items: center; gap: 12px; margin: 28px 0 20px;
+  }
+  .section-divider-line { flex: 1; height: 1px; background: #2A2826; }
+  .section-divider-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: #4A4540; white-space: nowrap;
+  }
+
+  .time-block { margin-bottom: 28px; }
+  .block-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px; padding-bottom: 8px;
+  }
+  .block-icon { font-size: 20px; line-height: 1; }
+  .block-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px; font-weight: 600; color: #F5F0EB;
+  }
+  .block-when { font-size: 11px; color: #6B6560; font-weight: 500; margin-left: auto; }
+  .block-pills {
+    font-size: 10px; font-weight: 700; color: #0F0F0F; padding: 3px 9px; border-radius: 10px;
+  }
+
+  .item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; border-radius: 12px; margin-bottom: 6px;
+    cursor: pointer; transition: all 0.2s;
+    user-select: none; -webkit-user-select: none;
+    background: #1A1817; border: 1px solid #2A2826;
+  }
+  .item:active { transform: scale(0.98); }
+  .item.checked { opacity: 0.35; background: #141312; }
+  .item.checked .item-name { text-decoration: line-through; }
+  .checkbox {
+    width: 22px; height: 22px; min-width: 22px; border-radius: 6px;
+    border: 2px solid #4A4540; display: flex; align-items: center;
+    justify-content: center; margin-top: 1px; transition: all 0.2s;
+    font-size: 12px; color: #0F0F0F; font-weight: 700;
+  }
+  .item-content { flex: 1; }
+  .item-top { display: flex; align-items: center; gap: 7px; }
+  .item-emoji { font-size: 15px; }
+  .item-name { font-size: 14px; font-weight: 700; color: #F5F0EB; transition: all 0.2s; }
+  .item-dose { font-size: 12.5px; font-weight: 600; margin-top: 3px; }
+  .item-note { font-size: 11px; color: #8A8480; margin-top: 2px; line-height: 1.35; }
+  .item-tag {
+    font-size: 9px; font-weight: 700; padding: 2px 7px;
+    border-radius: 4px; display: inline-block; margin-top: 4px;
+  }
+
+  /* Habit items */
+  .habit-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 14px; margin-bottom: 8px;
+    cursor: pointer; transition: all 0.2s;
+    user-select: none; -webkit-user-select: none;
+    background: #1A1817; border: 1px solid #2A2826;
+    position: relative; overflow: hidden;
+  }
+  .habit-item::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; border-radius: 3px 0 0 3px;
+  }
+  .habit-item:active { transform: scale(0.98); }
+  .habit-item.checked { opacity: 0.35; background: #141312; }
+  .habit-item.checked .habit-name { text-decoration: line-through; }
+  .habit-checkbox {
+    width: 26px; height: 26px; min-width: 26px; border-radius: 50%;
+    border: 2px solid #4A4540; display: flex; align-items: center;
+    justify-content: center; font-size: 13px; color: #0F0F0F;
+    font-weight: 700; transition: all 0.2s; flex-shrink: 0;
+  }
+  .habit-emoji { font-size: 22px; line-height: 1; }
+  .habit-body { flex: 1; }
+  .habit-name {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 16px; font-weight: 600; color: #F5F0EB;
+    line-height: 1.2; transition: all 0.2s;
+  }
+  .habit-sub { font-size: 11px; color: #6B6560; margin-top: 2px; }
+
+  .habit-gym::before { background: #10B981; }
+  .habit-gym.checked .habit-checkbox { border-color: #10B981; background: #10B981; }
+  .habit-meditation::before { background: #38BDF8; }
+  .habit-meditation.checked .habit-checkbox { border-color: #38BDF8; background: #38BDF8; }
+  .habit-duolingo::before { background: #A3E635; }
+  .habit-duolingo.checked .habit-checkbox { border-color: #A3E635; background: #A3E635; }
+  .habit-reading::before { background: #FB923C; }
+  .habit-reading.checked .habit-checkbox { border-color: #FB923C; background: #FB923C; }
+  .habit-gratitude::before { background: #F472B6; }
+  .habit-gratitude.checked .habit-checkbox { border-color: #F472B6; background: #F472B6; }
+
+  /* Supplement color themes */
+  .morning .block-header { border-bottom: 2px solid #B45309; }
+  .morning .block-pills { background: #F59E0B; }
+  .morning .item-dose { color: #FBBF24; }
+  .morning .item.checked .checkbox { border-color: #F59E0B; background: #F59E0B; }
+  .lunch .block-header { border-bottom: 2px solid #1D4ED8; }
+  .lunch .block-pills { background: #3B82F6; }
+  .lunch .item-dose { color: #60A5FA; }
+  .lunch .item.checked .checkbox { border-color: #3B82F6; background: #3B82F6; }
+  .dinner .block-header { border-bottom: 2px solid #6D28D9; }
+  .dinner .block-pills { background: #8B5CF6; }
+  .dinner .item-dose { color: #A78BFA; }
+  .dinner .item.checked .checkbox { border-color: #8B5CF6; background: #8B5CF6; }
+  .bedtime .block-header { border-bottom: 2px solid #4338CA; }
+  .bedtime .block-pills { background: #6366F1; }
+  .bedtime .item-dose { color: #818CF8; }
+  .bedtime .item.checked .checkbox { border-color: #6366F1; background: #6366F1; }
+  .occasional .block-header { border-bottom: 2px solid #B91C1C; }
+  .occasional .block-pills { background: #EF4444; }
+  .occasional .item-dose { color: #F87171; }
+
+  /* Take All button */
+  .take-all-btn {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: #6B6560;
+    background: none; border: 1px solid #2A2826;
+    padding: 3px 10px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; margin-left: auto; white-space: nowrap;
+  }
+  .take-all-btn:active { transform: scale(0.95); }
+  .take-all-btn.all-done { color: #10B981; border-color: #10B981; }
+
+  /* Ashwagandha cycle tracker */
+  .ashwa-cycle {
+    background: #1A1210;
+    border: 1.5px solid #4C1D95;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+  .ashwa-cycle-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .ashwa-status {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 3px 10px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .ashwa-status.on { background: #2E1065; color: #C4B5FD; }
+  .ashwa-status.off { background: #1C1917; color: #6B6560; }
+  .ashwa-status.inactive { background: #1C1917; color: #4A4540; }
+  .ashwa-countdown {
+    font-size: 12px; font-weight: 600; color: #A78BFA; flex: 1;
+  }
+  .ashwa-countdown.off { color: #6B6560; }
+  .ashwa-btn {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 4px 12px; border-radius: 7px; border: none;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .ashwa-btn.start-on { background: #7C3AED; color: #fff; }
+  .ashwa-btn.start-off { background: #374151; color: #9CA3AF; }
+  .ashwa-btn.end-cycle { background: #1C1917; color: #6B6560; border: 1px solid #2A2826; font-size: 9px; }
+  .ashwa-btn:active { transform: scale(0.95); }
+  .ashwa-progress-bar {
+    width: 100%; height: 4px; background: #2A2826; border-radius: 2px;
+    overflow: hidden; margin-top: 8px;
+  }
+  .ashwa-progress-fill {
+    height: 100%; border-radius: 2px; transition: width 0.5s ease;
+  }
+  .ashwa-progress-fill.on { background: #7C3AED; }
+  .ashwa-progress-fill.off { background: #374151; }
+  .ashwa-note { font-size: 10px; color: #6B6560; margin-top: 6px; }
+
+  /* Greyed out ashwagandha item when off cycle */
+  .item.ashwa-off-cycle {
+    opacity: 0.3; pointer-events: none; filter: grayscale(1);
+  }
+
+  .safety {
+    background: #1C1210; border: 1.5px solid #7F1D1D;
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 20px;
+  }
+  .safety-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 15px; font-weight: 700; color: #FCA5A5; margin-bottom: 10px;
+  }
+  .safety-item { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+  .safety-icon { font-size: 13px; min-width: 18px; }
+  .safety-text { font-size: 11.5px; color: #D6D3D1; line-height: 1.4; }
+  .safety-text.critical { color: #FCA5A5; font-weight: 600; }
+
+  .cycling {
+    background: #1A1817; border: 1.5px solid #2A2826;
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 20px;
+  }
+  .cycling-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 15px; font-weight: 700; color: #F5F0EB; margin-bottom: 10px;
+  }
+  .cycling-item {
+    font-size: 11.5px; color: #C4BDB6; margin-bottom: 5px;
+    line-height: 1.4; padding-left: 20px; position: relative;
+  }
+  .cycling-item::before {
+    content: ''; position: absolute; left: 4px; top: 5px;
+    width: 6px; height: 6px; border-radius: 50%; background: #4A4540;
+  }
+  .cycling-item strong { color: #F5F0EB; }
+
+  .footer { text-align: center; padding: 20px 0 10px; border-top: 1px solid #2A2826; }
+  .footer-text { font-size: 10px; color: #6B6560; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-eyebrow">Daily Protocol</div>
+    <h1>Supplements & Habits</h1>
+    <div class="header-sub">14 supplements · 5 habits</div>
+    <div class="header-date" id="dateDisplay"></div>
+    <div class="progress-section">
+      <div class="progress-row">
+        <span class="progress-label">Supps</span>
+        <div class="progress-bar"><div class="progress-fill supps" id="suppsFill"></div></div>
+        <span class="progress-text" id="suppsText">0 / 14</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Habits</span>
+        <div class="progress-bar"><div class="progress-fill habits" id="habitsFill"></div></div>
+        <span class="progress-text" id="habitsText">0 / 5</span>
+      </div>
+      <div class="progress-row" style="justify-content:center;margin-top:2px">
+        <button class="reset-btn" id="resetBtn" onclick="resetAll()">reset all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HABITS -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label">Daily Habits</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="habit-item habit-gym" id="h-gym" onclick="toggleHabit(this)">
+    <div class="habit-checkbox"></div>
+    <div class="habit-emoji">🏋️</div>
+    <div class="habit-body">
+      <div class="habit-name">Gym</div>
+      <div class="habit-sub">Strength · cardio · movement</div>
+    </div>
+  </div>
+  <div class="habit-item habit-meditation" id="h-meditation" onclick="toggleHabit(this)">
+    <div class="habit-checkbox"></div>
+    <div class="habit-emoji">🧘</div>
+    <div class="habit-body">
+      <div class="habit-name">Meditation</div>
+      <div class="habit-sub">Mindfulness · breathwork · stillness</div>
+    </div>
+  </div>
+  <div class="habit-item habit-duolingo" id="h-duolingo" onclick="toggleHabit(this)">
+    <div class="habit-checkbox"></div>
+    <div class="habit-emoji">🦉</div>
+    <div class="habit-body">
+      <div class="habit-name">Duolingo</div>
+      <div class="habit-sub">Language practice · keep the streak</div>
+    </div>
+  </div>
+  <div class="habit-item habit-reading" id="h-reading" onclick="toggleHabit(this)">
+    <div class="habit-checkbox"></div>
+    <div class="habit-emoji">📖</div>
+    <div class="habit-body">
+      <div class="habit-name">Reading</div>
+      <div class="habit-sub">Books · long-form · deep focus</div>
+    </div>
+  </div>
+  <div class="habit-item habit-gratitude" id="h-gratitude" onclick="toggleHabit(this)">
+    <div class="habit-checkbox"></div>
+    <div class="habit-emoji">📓</div>
+    <div class="habit-body">
+      <div class="habit-name">Gratitude Journal</div>
+      <div class="habit-sub">Reflect · write · appreciate</div>
+    </div>
+  </div>
+
+  <!-- SUPPLEMENTS -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label">Supplements</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="time-block morning">
+    <div class="block-header">
+      <span class="block-icon">☀️</span>
+      <span class="block-title">Morning</span>
+      <span class="block-when">with breakfast + fat</span>
+      <span class="block-pills">8</span>
+      <button class="take-all-btn" onclick="takeAll('morning', this)">Take All</button>
+    </div>
+    <div class="item" id="s-creatine" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">💪</span><span class="item-name">Creatine Monohydrate</span></div>
+        <div class="item-dose">5g — 1 scoop in water or shake</div>
+      </div>
+    </div>
+    <div class="item" id="s-omega3" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🐟</span><span class="item-name">Omega-3 Fish Oil</span></div>
+        <div class="item-dose">1 softgel (750mg EPA+DHA)</div>
+        <div class="item-note">Take with fatty food for absorption</div>
+      </div>
+    </div>
+    <div class="item" id="s-vitd" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">☀️</span><span class="item-name">Vitamin D (GymBeam)</span></div>
+        <div class="item-dose">1 cap (2000 IU)</div>
+        <div class="item-note">Take with fat — same meal as Omega-3</div>
+      </div>
+    </div>
+    <div class="item" id="s-k2" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🦴</span><span class="item-name">Vitamin K2 MK-7 (NOW)</span></div>
+        <div class="item-dose">1 cap (100mcg)</div>
+        <div class="item-note">Always take with Vitamin D — needs fat</div>
+      </div>
+    </div>
+    <div class="item" id="s-vitc" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🍊</span><span class="item-name">Vitamin C + Zinc (NOW)</span></div>
+        <div class="item-dose">1 cap (1000mg C + 15mg Zinc)</div>
+      </div>
+    </div>
+    <div class="item" id="s-b12" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">⚡</span><span class="item-name">Vitamin B12 + Folate (NOW)</span></div>
+        <div class="item-dose">1 lozenge (1000mcg B12)</div>
+        <div class="item-note">Dissolve under tongue — don't swallow</div>
+      </div>
+    </div>
+    <div class="item" id="s-nac" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🛡️</span><span class="item-name">NAC (NOW)</span></div>
+        <div class="item-dose">1 cap (600mg)</div>
+        <div class="item-note">Ideally 30min before food — liver & antioxidant support</div>
+        <span class="item-tag" style="background:#422006;color:#FBBF24">TO ORDER</span>
+      </div>
+    </div>
+    <div class="item" id="s-coq10" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🔋</span><span class="item-name">CoQ10 (NOW)</span></div>
+        <div class="item-dose">1 softgel (100mg)</div>
+        <div class="item-note">Take with fatty meal — alongside Omega-3</div>
+        <span class="item-tag" style="background:#422006;color:#FBBF24">TO ORDER</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="time-block lunch">
+    <div class="block-header">
+      <span class="block-icon">🌤️</span>
+      <span class="block-title">Afternoon</span>
+      <span class="block-when">with lunch</span>
+      <span class="block-pills">2</span>
+      <button class="take-all-btn" onclick="takeAll('lunch', this)">Take All</button>
+    </div>
+    <div class="item" id="s-calcium" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🥛</span><span class="item-name">Calcium Citrate w/ Minerals (NOW)</span></div>
+        <div class="item-dose">2 tablets (600mg Ca · 300mg Mg · 15mg Zn · 1mg Cu)</div>
+        <div class="item-note">Keep 2+ hours away from morning zinc & evening magnesium</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="time-block dinner">
+    <div class="block-header">
+      <span class="block-icon">🌙</span>
+      <span class="block-title">Dinner</span>
+      <span class="block-when">with evening meal</span>
+      <span class="block-pills">1</span>
+      <button class="take-all-btn" onclick="takeAll('dinner', this)">Take All</button>
+    </div>
+    <div class="item" id="s-ashwa" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🌿</span><span class="item-name">Ashwagandha (NOW)</span></div>
+        <div class="item-dose">1 cap (450mg)</div>
+      </div>
+    </div>
+    <div class="ashwa-cycle" id="ashwa-cycle-widget">
+      <div class="ashwa-cycle-row">
+        <span class="ashwa-status inactive" id="ashwa-status">NO CYCLE</span>
+        <span class="ashwa-countdown" id="ashwa-countdown">Start a cycle to track</span>
+        <button class="ashwa-btn start-on" id="ashwa-main-btn" onclick="ashwaAction()">Start ON Cycle</button>
+      </div>
+      <div class="ashwa-progress-bar" id="ashwa-prog-wrap" style="display:none">
+        <div class="ashwa-progress-fill on" id="ashwa-prog-fill" style="width:0%"></div>
+      </div>
+      <div class="ashwa-note" id="ashwa-note">8 weeks ON → 2–4 weeks OFF</div>
+    </div>
+  </div>
+
+  <div class="time-block bedtime">
+    <div class="block-header">
+      <span class="block-icon">😴</span>
+      <span class="block-title">Bedtime</span>
+      <span class="block-when">1hr → lights out</span>
+      <span class="block-pills">4</span>
+      <button class="take-all-btn" onclick="takeAll('bedtime', this)">Take All</button>
+    </div>
+    <div class="item" id="s-magnesium" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">😴</span><span class="item-name">Magnesium Bisglycinate (NOW)</span></div>
+        <div class="item-dose">2 tablets (200mg elemental Mg)</div>
+        <div class="item-note">1 hour before bed — primary sleep supplement</div>
+      </div>
+    </div>
+    <div class="item" id="s-theanine" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🍵</span><span class="item-name">L-Theanine (NOW)</span></div>
+        <div class="item-dose">1 cap (200mg)</div>
+        <div class="item-note">30 min before bed — calm without drowsiness</div>
+      </div>
+    </div>
+    <div class="item" id="s-tryptophan" onclick="toggle(this)">
+      <div class="checkbox"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🌜</span><span class="item-name">L-Tryptophan (NOW)</span></div>
+        <div class="item-dose">1 cap only (500mg — NOT the label's 1000mg)</div>
+        <div class="item-note">LAST supplement. Empty stomach, away from protein</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="time-block occasional">
+    <div class="block-header">
+      <span class="block-icon">🎉</span>
+      <span class="block-title">Post-Party Only</span>
+      <span class="block-when">occasional — not daily</span>
+      <span class="block-pills">1-2</span>
+    </div>
+    <div class="item" style="cursor:default;border-color:#7F1D1D">
+      <div class="checkbox" style="border-color:#EF4444;border-style:dashed"></div>
+      <div class="item-content">
+        <div class="item-top"><span class="item-emoji">🔄</span><span class="item-name">5-HTP (NOW)</span></div>
+        <div class="item-dose">1–2 caps (100–200mg) — max 3 days</div>
+        <div class="item-note">Morning after party only. SKIP Tryptophan that day + next 24hrs</div>
+        <span class="item-tag" style="background:#7F1D1D;color:#FCA5A5">⚠️ NEVER WITH TRYPTOPHAN</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="safety">
+    <div class="safety-title">⚠️ Safety Rules</div>
+    <div class="safety-item"><span class="safety-icon">🚫</span><span class="safety-text critical">NEVER take Tryptophan + 5-HTP same day — serotonin risk</span></div>
+    <div class="safety-item"><span class="safety-icon">💊</span><span class="safety-text critical">Monitor serotonin symptoms w/ Ritalin: agitation, rapid heartbeat, sweating, muscle twitching → STOP & see doctor</span></div>
+    <div class="safety-item"><span class="safety-icon">🔄</span><span class="safety-text critical">Ashwagandha: 8 weeks ON → 2–4 weeks OFF</span></div>
+    <div class="safety-item"><span class="safety-icon">⏰</span><span class="safety-text">Calcium separate from zinc & magnesium by 2+ hours</span></div>
+    <div class="safety-item"><span class="safety-icon">🥩</span><span class="safety-text">Tryptophan: empty stomach, away from protein</span></div>
+    <div class="safety-item"><span class="safety-icon">🧈</span><span class="safety-text">D3, K2, Omega-3, CoQ10 → all need dietary fat</span></div>
+    <div class="safety-item"><span class="safety-icon">🩸</span><span class="safety-text">Annual bloodwork: liver enzymes, thyroid, 25-OH Vit D, metabolic panel</span></div>
+  </div>
+
+  <div class="cycling">
+    <div class="cycling-title">🔄 Cycling & Review Schedule</div>
+    <div class="cycling-item"><strong>Ashwagandha:</strong> 8 weeks on, 2–4 weeks off — track your start date</div>
+    <div class="cycling-item"><strong>L-Tryptophan:</strong> Daily OK. Doctor check-in every 6 months (Ritalin combo)</div>
+    <div class="cycling-item"><strong>L-Theanine:</strong> Daily OK. Try 1 week off if effects fade</div>
+    <div class="cycling-item"><strong>5-HTP:</strong> Occasional ONLY — never daily use</div>
+    <div class="cycling-item"><strong>Everything else:</strong> Daily indefinitely, no cycling needed</div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-text">DAILY PROTOCOL · UPDATED MARCH 2026</div>
+  </div>
+</div>
+
+<script>
+  // ── Constants ────────────────────────────────────────────────────
+  const TODAY = new Date().toISOString().slice(0, 10);
+  const SAVE_KEY = 'protocol_state';
+  const ASHWA_KEY = 'ashwa_cycle';
+  const ASHWA_ON_DAYS = 56;  // 8 weeks
+  const ASHWA_OFF_DAYS = 21; // 3 weeks (midpoint of 2–4)
+
+  // ── Persist daily state ──────────────────────────────────────────
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || null; } catch { return null; }
+  }
+  function saveState() {
+    const checked = [];
+    document.querySelectorAll('.item.checked, .habit-item.checked').forEach(el => { if (el.id) checked.push(el.id); });
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ date: TODAY, checked }));
+  }
+  function restoreState(state) {
+    if (!state || state.date !== TODAY) return;
+    state.checked.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('checked');
+      const box = el.querySelector('.checkbox, .habit-checkbox');
+      if (box) box.innerHTML = '✓';
+    });
+  }
+
+  // ── Date display ─────────────────────────────────────────────────
+  const d = new Date();
+  document.getElementById('dateDisplay').textContent =
+    d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // ── Progress bars ────────────────────────────────────────────────
+  const TOTAL_SUPPS = 14;
+  const TOTAL_HABITS = 5;
+
+  function updateProgress() {
+    const suppsChecked = document.querySelectorAll('.item.checked').length;
+    const habitsChecked = document.querySelectorAll('.habit-item.checked').length;
+    const suppsPct = Math.round((suppsChecked / TOTAL_SUPPS) * 100);
+    const habitsPct = Math.round((habitsChecked / TOTAL_HABITS) * 100);
+
+    const sf = document.getElementById('suppsFill');
+    sf.style.width = suppsPct + '%';
+    sf.classList.toggle('complete', suppsPct >= 100);
+    document.getElementById('suppsText').textContent =
+      suppsChecked + ' / ' + TOTAL_SUPPS + (suppsPct >= 100 ? ' ✓' : '');
+
+    const hf = document.getElementById('habitsFill');
+    hf.style.width = habitsPct + '%';
+    hf.classList.toggle('complete', habitsPct >= 100);
+    document.getElementById('habitsText').textContent =
+      habitsChecked + ' / ' + TOTAL_HABITS + (habitsPct >= 100 ? ' ✓' : '');
+
+    document.getElementById('resetBtn').classList.toggle('visible', suppsChecked + habitsChecked > 0);
+
+    // update Take All button states
+    ['morning','lunch','dinner','bedtime'].forEach(cls => {
+      const block = document.querySelector('.' + cls);
+      if (!block) return;
+      const btn = block.querySelector('.take-all-btn');
+      if (!btn) return;
+      const items = block.querySelectorAll('.item:not(.ashwa-off-cycle)');
+      const allDone = items.length > 0 && [...items].every(i => i.classList.contains('checked'));
+      btn.classList.toggle('all-done', allDone);
+      btn.textContent = allDone ? '✓ Done' : 'Take All';
+    });
+
+    saveState();
+  }
+
+  // ── Toggle individual item ────────────────────────────────────────
+  function toggle(el) {
+    if (el.classList.contains('ashwa-off-cycle')) return;
+    el.classList.toggle('checked');
+    el.querySelector('.checkbox').innerHTML = el.classList.contains('checked') ? '✓' : '';
+    updateProgress();
+  }
+
+  function toggleHabit(el) {
+    el.classList.toggle('checked');
+    el.querySelector('.habit-checkbox').innerHTML = el.classList.contains('checked') ? '✓' : '';
+    updateProgress();
+  }
+
+  // ── Take All button ───────────────────────────────────────────────
+  function takeAll(blockClass, btn) {
+    const block = document.querySelector('.' + blockClass);
+    const items = block.querySelectorAll('.item:not(.ashwa-off-cycle)');
+    const allDone = [...items].every(i => i.classList.contains('checked'));
+    items.forEach(el => {
+      if (allDone) {
+        el.classList.remove('checked');
+        el.querySelector('.checkbox').innerHTML = '';
+      } else {
+        el.classList.add('checked');
+        el.querySelector('.checkbox').innerHTML = '✓';
+      }
+    });
+    updateProgress();
+  }
+
+  // ── Reset all ────────────────────────────────────────────────────
+  function resetAll() {
+    document.querySelectorAll('.item.checked, .habit-item.checked').forEach(el => {
+      el.classList.remove('checked');
+      const box = el.querySelector('.checkbox, .habit-checkbox');
+      if (box) box.innerHTML = '';
+    });
+    updateProgress();
+  }
+
+  // ── Ashwagandha Cycle Tracker ────────────────────────────────────
+  function loadAshwa() {
+    try { return JSON.parse(localStorage.getItem(ASHWA_KEY)) || null; } catch { return null; }
+  }
+  function saveAshwa(data) {
+    localStorage.setItem(ASHWA_KEY, JSON.stringify(data));
+  }
+
+  function daysBetween(dateStr) {
+    const start = new Date(dateStr);
+    const now = new Date();
+    return Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  }
+
+  function renderAshwa() {
+    const data = loadAshwa();
+    const statusEl = document.getElementById('ashwa-status');
+    const countdownEl = document.getElementById('ashwa-countdown');
+    const mainBtn = document.getElementById('ashwa-main-btn');
+    const progWrap = document.getElementById('ashwa-prog-wrap');
+    const progFill = document.getElementById('ashwa-prog-fill');
+    const noteEl = document.getElementById('ashwa-note');
+    const ashwaItem = document.getElementById('s-ashwa');
+
+    if (!data) {
+      // No cycle started
+      statusEl.className = 'ashwa-status inactive';
+      statusEl.textContent = 'NO CYCLE';
+      countdownEl.className = 'ashwa-countdown';
+      countdownEl.textContent = 'Start a cycle to track';
+      mainBtn.className = 'ashwa-btn start-on';
+      mainBtn.textContent = 'Start ON Cycle';
+      progWrap.style.display = 'none';
+      noteEl.textContent = '8 weeks ON → 2–4 weeks OFF';
+      ashwaItem.classList.remove('ashwa-off-cycle');
+      return;
+    }
+
+    const elapsed = daysBetween(data.startDate);
+    const total = data.phase === 'on' ? ASHWA_ON_DAYS : ASHWA_OFF_DAYS;
+    const remaining = Math.max(0, total - elapsed);
+    const pct = Math.min(100, Math.round((elapsed / total) * 100));
+
+    if (data.phase === 'on') {
+      ashwaItem.classList.remove('ashwa-off-cycle');
+      statusEl.className = 'ashwa-status on';
+      statusEl.textContent = 'ON CYCLE';
+      countdownEl.className = 'ashwa-countdown';
+
+      if (remaining === 0) {
+        countdownEl.textContent = '⚠️ 8 weeks done — time for a break!';
+        mainBtn.className = 'ashwa-btn start-off';
+        mainBtn.textContent = 'Start OFF Cycle';
+        noteEl.textContent = 'Take 2–4 weeks off now';
+      } else {
+        countdownEl.textContent = remaining + ' days left in ON cycle';
+        mainBtn.className = 'ashwa-btn end-cycle';
+        mainBtn.textContent = 'End cycle early';
+        noteEl.textContent = 'Day ' + elapsed + ' of ' + ASHWA_ON_DAYS + ' · ' + pct + '% complete';
+      }
+      progFill.className = 'ashwa-progress-fill on';
+
+    } else {
+      // OFF phase
+      ashwaItem.classList.add('ashwa-off-cycle');
+      statusEl.className = 'ashwa-status off';
+      statusEl.textContent = 'OFF CYCLE';
+      countdownEl.className = 'ashwa-countdown off';
+
+      if (remaining === 0) {
+        countdownEl.textContent = '✓ Break done — ready to restart!';
+        mainBtn.className = 'ashwa-btn start-on';
+        mainBtn.textContent = 'Start ON Cycle';
+        noteEl.textContent = 'You can begin your next 8-week cycle';
+      } else {
+        countdownEl.textContent = remaining + ' days left in OFF cycle';
+        mainBtn.className = 'ashwa-btn end-cycle';
+        mainBtn.textContent = 'End break early';
+        noteEl.textContent = 'Day ' + elapsed + ' of ' + ASHWA_OFF_DAYS + ' · Skip ashwagandha today';
+      }
+      progFill.className = 'ashwa-progress-fill off';
+    }
+
+    progWrap.style.display = 'block';
+    progFill.style.width = pct + '%';
+  }
+
+  function ashwaAction() {
+    const data = loadAshwa();
+    const mainBtn = document.getElementById('ashwa-main-btn');
+
+    if (!data) {
+      // Start fresh ON cycle
+      saveAshwa({ phase: 'on', startDate: TODAY });
+    } else if (data.phase === 'on') {
+      const elapsed = daysBetween(data.startDate);
+      if (elapsed >= ASHWA_ON_DAYS || mainBtn.textContent.includes('Start OFF')) {
+        // Start OFF cycle
+        saveAshwa({ phase: 'off', startDate: TODAY });
+      } else {
+        // End early — confirm
+        if (confirm('End ON cycle early after ' + elapsed + ' days?')) {
+          saveAshwa({ phase: 'off', startDate: TODAY });
+        }
+      }
+    } else {
+      // OFF phase
+      const elapsed = daysBetween(data.startDate);
+      if (elapsed >= ASHWA_OFF_DAYS || mainBtn.textContent.includes('Start ON')) {
+        saveAshwa({ phase: 'on', startDate: TODAY });
+      } else {
+        if (confirm('End OFF break early after ' + elapsed + ' days?')) {
+          saveAshwa({ phase: 'on', startDate: TODAY });
+        }
+      }
+    }
+    renderAshwa();
+    updateProgress();
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────
+  restoreState(loadState());
+  renderAshwa();
+  updateProgress();
+
+  // ── Service Worker ───────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
