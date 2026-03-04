@@ -273,6 +273,41 @@
 
   .footer { text-align: center; padding: 20px 0 10px; border-top: 1px solid #2A2826; }
   .footer-text { font-size: 10px; color: #6B6560; letter-spacing: 1px; }
+
+  /* Streak & weekly dots */
+  .habit-meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap;}
+  .streak-badge{font-size:11px;font-weight:700;color:#FB923C;background:#1C1008;border:1px solid #431407;padding:2px 7px;border-radius:6px;white-space:nowrap;}
+  .streak-badge.zero{color:#4A4540;background:#1A1817;border-color:#2A2826;}
+  .week-dots{display:flex;gap:3px;align-items:center;}
+  .week-dot{width:7px;height:7px;border-radius:50%;background:#2A2826;}
+  .week-dot.done{background:currentColor;}
+  .week-dot.today-empty{background:transparent;border:1.5px solid currentColor;opacity:0.5;}
+
+  /* Low stock */
+  .low-stock-btn{font-size:9px;font-weight:700;color:#6B6560;background:none;border:1px dashed #3A3836;padding:2px 7px;border-radius:5px;cursor:pointer;transition:all 0.2s;margin-top:5px;display:inline-block;}
+  .low-stock-btn.low{color:#F97316;border-color:#F97316;border-style:solid;background:#1C0D00;}
+  .low-stock-btn.low::before{content:'⚠️ ';}
+  .low-stock-banner{background:#1C0D00;border:1.5px solid #9A3412;border-radius:12px;padding:11px 14px;margin-bottom:16px;display:none;}
+  .low-stock-banner.visible{display:block;}
+  .low-stock-banner-title{font-size:11px;font-weight:700;color:#FB923C;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+  .low-stock-list{font-size:12px;color:#D6D3D1;line-height:1.8;}
+
+  /* Fasting tracker */
+  .fasting-widget{background:#0D1117;border:1.5px solid #1E3A5F;border-radius:14px;padding:16px 18px;margin-bottom:20px;}
+  .fasting-title{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;color:#F5F0EB;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .fasting-timer{font-family:'Fraunces',Georgia,serif;font-size:36px;font-weight:700;color:#38BDF8;text-align:center;letter-spacing:2px;margin:8px 0;transition:color 0.5s;}
+  .fasting-timer.goal-reached{color:#10B981;}
+  .fasting-status{text-align:center;font-size:11px;color:#6B6560;margin-bottom:10px;}
+  .fasting-goal-bar{width:100%;height:5px;background:#1E3A5F;border-radius:3px;overflow:hidden;margin-bottom:12px;}
+  .fasting-goal-fill{height:100%;background:#38BDF8;border-radius:3px;transition:width 1s linear,background 0.5s;width:0%;}
+  .fasting-goal-fill.done{background:#10B981;}
+  .fasting-goal-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .fasting-goal-label{font-size:11px;color:#6B6560;}
+  .fasting-goal-select{background:#1A1817;border:1px solid #2A2826;color:#C4BDB6;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer;}
+  .fasting-btns{display:flex;gap:8px;}
+  .fasting-btn{flex:1;padding:9px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .fasting-btn:active{transform:scale(0.97);}
+  .fasting-btn.start{background:#0EA5E9;color:#fff;}.fasting-btn.stop{background:#1E3A5F;color:#7DD3FC;}.fasting-btn.disabled{background:#1A1817;color:#4A4540;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -299,7 +334,33 @@
     </div>
   </div>
 
-  <!-- HABITS -->
+  <!-- FASTING TRACKER -->
+  <div class="fasting-widget">
+    <div class="fasting-title">⏱ Fasting Timer</div>
+    <div class="fasting-goal-row">
+      <span class="fasting-goal-label">Goal:</span>
+      <select class="fasting-goal-select" id="fastingGoal" onchange="saveFastingGoal()">
+        <option value="12">12 hours</option><option value="14">14 hours</option>
+        <option value="16" selected>16 hours</option><option value="18">18 hours</option>
+        <option value="20">20 hours</option><option value="24">24 hours</option>
+      </select>
+    </div>
+    <div class="fasting-timer" id="fastingTimer">00:00:00</div>
+    <div class="fasting-status" id="fastingStatus">Not fasting</div>
+    <div class="fasting-goal-bar"><div class="fasting-goal-fill" id="fastingFill"></div></div>
+    <div class="fasting-btns">
+      <button class="fasting-btn start" id="fastingStartBtn" onclick="fastingStart()">Start Fast</button>
+      <button class="fasting-btn disabled" id="fastingStopBtn" onclick="fastingStop()">End Fast</button>
+    </div>
+  </div>
+
+  <!-- LOW STOCK BANNER -->
+  <div class="low-stock-banner" id="lowStockBanner">
+    <div class="low-stock-banner-title">🛒 Running Low — Order Soon</div>
+    <div class="low-stock-list" id="lowStockList"></div>
+  </div>
+
+    <!-- HABITS -->
   <div class="section-divider">
     <div class="section-divider-line"></div>
     <div class="section-divider-label">Daily Habits</div>
@@ -311,7 +372,7 @@
     <div class="habit-emoji">🏋️</div>
     <div class="habit-body">
       <div class="habit-name">Gym</div>
-      <div class="habit-sub">Strength · cardio · movement</div>
+      <div class="habit-meta"><span class="streak-badge zero" id="streak-h-gym">— 0 days</span><div class="week-dots" id="dots-h-gym" style="color:#10B981"></div></div>
     </div>
   </div>
   <div class="habit-item habit-meditation" id="h-meditation" onclick="toggleHabit(this)">
@@ -319,7 +380,7 @@
     <div class="habit-emoji">🧘</div>
     <div class="habit-body">
       <div class="habit-name">Meditation</div>
-      <div class="habit-sub">Mindfulness · breathwork · stillness</div>
+      <div class="habit-meta"><span class="streak-badge zero" id="streak-h-meditation">— 0 days</span><div class="week-dots" id="dots-h-meditation" style="color:#38BDF8"></div></div>
     </div>
   </div>
   <div class="habit-item habit-duolingo" id="h-duolingo" onclick="toggleHabit(this)">
@@ -327,7 +388,7 @@
     <div class="habit-emoji">🦉</div>
     <div class="habit-body">
       <div class="habit-name">Duolingo</div>
-      <div class="habit-sub">Language practice · keep the streak</div>
+      <div class="habit-meta"><span class="streak-badge zero" id="streak-h-duolingo">— 0 days</span><div class="week-dots" id="dots-h-duolingo" style="color:#A3E635"></div></div>
     </div>
   </div>
   <div class="habit-item habit-reading" id="h-reading" onclick="toggleHabit(this)">
@@ -335,7 +396,7 @@
     <div class="habit-emoji">📖</div>
     <div class="habit-body">
       <div class="habit-name">Reading</div>
-      <div class="habit-sub">Books · long-form · deep focus</div>
+      <div class="habit-meta"><span class="streak-badge zero" id="streak-h-reading">— 0 days</span><div class="week-dots" id="dots-h-reading" style="color:#FB923C"></div></div>
     </div>
   </div>
   <div class="habit-item habit-gratitude" id="h-gratitude" onclick="toggleHabit(this)">
@@ -343,7 +404,7 @@
     <div class="habit-emoji">📓</div>
     <div class="habit-body">
       <div class="habit-name">Gratitude Journal</div>
-      <div class="habit-sub">Reflect · write · appreciate</div>
+      <div class="habit-meta"><span class="streak-badge zero" id="streak-h-gratitude">— 0 days</span><div class="week-dots" id="dots-h-gratitude" style="color:#F472B6"></div></div>
     </div>
   </div>
 
@@ -367,6 +428,8 @@
       <div class="item-content">
         <div class="item-top"><span class="item-emoji">💪</span><span class="item-name">Creatine Monohydrate</span></div>
         <div class="item-dose">5g — 1 scoop in water or shake</div>
+
+        <button class="low-stock-btn" id="ls-s-creatine" onclick="toggleLowStock(event,'Creatine Monohydrate','ls-s-creatine')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-omega3" onclick="toggle(this)">
@@ -375,6 +438,8 @@
         <div class="item-top"><span class="item-emoji">🐟</span><span class="item-name">Omega-3 Fish Oil</span></div>
         <div class="item-dose">1 softgel (750mg EPA+DHA)</div>
         <div class="item-note">Take with fatty food for absorption</div>
+
+        <button class="low-stock-btn" id="ls-s-omega3" onclick="toggleLowStock(event,'Omega-3 Fish Oil','ls-s-omega3')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-vitd" onclick="toggle(this)">
@@ -383,6 +448,8 @@
         <div class="item-top"><span class="item-emoji">☀️</span><span class="item-name">Vitamin D (GymBeam)</span></div>
         <div class="item-dose">1 cap (2000 IU)</div>
         <div class="item-note">Take with fat — same meal as Omega-3</div>
+
+        <button class="low-stock-btn" id="ls-s-vitd" onclick="toggleLowStock(event,'Vitamin D','ls-s-vitd')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-k2" onclick="toggle(this)">
@@ -391,6 +458,8 @@
         <div class="item-top"><span class="item-emoji">🦴</span><span class="item-name">Vitamin K2 MK-7 (NOW)</span></div>
         <div class="item-dose">1 cap (100mcg)</div>
         <div class="item-note">Always take with Vitamin D — needs fat</div>
+
+        <button class="low-stock-btn" id="ls-s-k2" onclick="toggleLowStock(event,'Vitamin K2 MK-7','ls-s-k2')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-vitc" onclick="toggle(this)">
@@ -398,6 +467,8 @@
       <div class="item-content">
         <div class="item-top"><span class="item-emoji">🍊</span><span class="item-name">Vitamin C + Zinc (NOW)</span></div>
         <div class="item-dose">1 cap (1000mg C + 15mg Zinc)</div>
+
+        <button class="low-stock-btn" id="ls-s-vitc" onclick="toggleLowStock(event,'Vitamin C + Zinc','ls-s-vitc')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-b12" onclick="toggle(this)">
@@ -406,6 +477,8 @@
         <div class="item-top"><span class="item-emoji">⚡</span><span class="item-name">Vitamin B12 + Folate (NOW)</span></div>
         <div class="item-dose">1 lozenge (1000mcg B12)</div>
         <div class="item-note">Dissolve under tongue — don't swallow</div>
+
+        <button class="low-stock-btn" id="ls-s-b12" onclick="toggleLowStock(event,'Vitamin B12','ls-s-b12')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-nac" onclick="toggle(this)">
@@ -415,6 +488,8 @@
         <div class="item-dose">1 cap (600mg)</div>
         <div class="item-note">Ideally 30min before food — liver & antioxidant support</div>
         <span class="item-tag" style="background:#422006;color:#FBBF24">TO ORDER</span>
+
+        <button class="low-stock-btn" id="ls-s-nac" onclick="toggleLowStock(event,'NAC','ls-s-nac')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-coq10" onclick="toggle(this)">
@@ -424,6 +499,8 @@
         <div class="item-dose">1 softgel (100mg)</div>
         <div class="item-note">Take with fatty meal — alongside Omega-3</div>
         <span class="item-tag" style="background:#422006;color:#FBBF24">TO ORDER</span>
+
+        <button class="low-stock-btn" id="ls-s-coq10" onclick="toggleLowStock(event,'CoQ10','ls-s-coq10')">Mark low stock</button>
       </div>
     </div>
   </div>
@@ -442,6 +519,8 @@
         <div class="item-top"><span class="item-emoji">🥛</span><span class="item-name">Calcium Citrate w/ Minerals (NOW)</span></div>
         <div class="item-dose">2 tablets (600mg Ca · 300mg Mg · 15mg Zn · 1mg Cu)</div>
         <div class="item-note">Keep 2+ hours away from morning zinc & evening magnesium</div>
+
+        <button class="low-stock-btn" id="ls-s-calcium" onclick="toggleLowStock(event,'Calcium Citrate','ls-s-calcium')">Mark low stock</button>
       </div>
     </div>
   </div>
@@ -459,6 +538,8 @@
       <div class="item-content">
         <div class="item-top"><span class="item-emoji">🌿</span><span class="item-name">Ashwagandha (NOW)</span></div>
         <div class="item-dose">1 cap (450mg)</div>
+
+        <button class="low-stock-btn" id="ls-s-ashwa" onclick="toggleLowStock(event,'Ashwagandha','ls-s-ashwa')">Mark low stock</button>
       </div>
     </div>
     <div class="ashwa-cycle" id="ashwa-cycle-widget">
@@ -488,6 +569,8 @@
         <div class="item-top"><span class="item-emoji">😴</span><span class="item-name">Magnesium Bisglycinate (NOW)</span></div>
         <div class="item-dose">2 tablets (200mg elemental Mg)</div>
         <div class="item-note">1 hour before bed — primary sleep supplement</div>
+
+        <button class="low-stock-btn" id="ls-s-magnesium" onclick="toggleLowStock(event,'Magnesium Bisglycinate','ls-s-magnesium')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-theanine" onclick="toggle(this)">
@@ -496,6 +579,8 @@
         <div class="item-top"><span class="item-emoji">🍵</span><span class="item-name">L-Theanine (NOW)</span></div>
         <div class="item-dose">1 cap (200mg)</div>
         <div class="item-note">30 min before bed — calm without drowsiness</div>
+
+        <button class="low-stock-btn" id="ls-s-theanine" onclick="toggleLowStock(event,'L-Theanine','ls-s-theanine')">Mark low stock</button>
       </div>
     </div>
     <div class="item" id="s-tryptophan" onclick="toggle(this)">
@@ -504,6 +589,8 @@
         <div class="item-top"><span class="item-emoji">🌜</span><span class="item-name">L-Tryptophan (NOW)</span></div>
         <div class="item-dose">1 cap only (500mg — NOT the label's 1000mg)</div>
         <div class="item-note">LAST supplement. Empty stomach, away from protein</div>
+
+        <button class="low-stock-btn" id="ls-s-tryptophan" onclick="toggleLowStock(event,'L-Tryptophan','ls-s-tryptophan')">Mark low stock</button>
       </div>
     </div>
   </div>
@@ -553,6 +640,16 @@
 
 <script>
   // ── Constants ────────────────────────────────────────────────────
+  const TODAY = new Date().toISOString().slice(0,10);
+  const SAVE_KEY='protocol_state', ASHWA_KEY='ashwa_cycle', HABIT_LOG_KEY='habit_log', LOW_STOCK_KEY='low_stock', FAST_KEY='fast_state', FAST_GOAL_KEY='fast_goal';
+  const ASHWA_ON_DAYS=56, ASHWA_OFF_DAYS=21;
+  const HABIT_IDS=['h-gym','h-meditation','h-duolingo','h-reading','h-gratitude'];
+
+  function ls(k,fb=null){try{const r=localStorage.getItem(k);return r?JSON.parse(r):fb;}catch{return fb;}}
+  function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v));}
+  function daysBetween(ds){return Math.floor((Date.now()-new Date(ds))/864e5);}
+  function lastNDays(n){const a=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(d.toISOString().slice(0,10));}return a;}
+  function pad(n){return String(n).padStart(2,'0');}
   const TODAY = new Date().toISOString().slice(0, 10);
   const SAVE_KEY = 'protocol_state';
   const ASHWA_KEY = 'ashwa_cycle';
@@ -560,24 +657,8 @@
   const ASHWA_OFF_DAYS = 21; // 3 weeks (midpoint of 2–4)
 
   // ── Persist daily state ──────────────────────────────────────────
-  function loadState() {
-    try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || null; } catch { return null; }
-  }
-  function saveState() {
-    const checked = [];
-    document.querySelectorAll('.item.checked, .habit-item.checked').forEach(el => { if (el.id) checked.push(el.id); });
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ date: TODAY, checked }));
-  }
-  function restoreState(state) {
-    if (!state || state.date !== TODAY) return;
-    state.checked.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.classList.add('checked');
-      const box = el.querySelector('.checkbox, .habit-checkbox');
-      if (box) box.innerHTML = '✓';
-    });
-  }
+  function saveState(){const c=[];document.querySelectorAll('.item.checked,.habit-item.checked').forEach(el=>{if(el.id)c.push(el.id);});lsSet(SAVE_KEY,{date:TODAY,checked:c});}
+  function restoreState(){const s=ls(SAVE_KEY);if(!s||s.date!==TODAY)return;s.checked.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.add('checked');const b=el.querySelector('.checkbox,.habit-checkbox');if(b)b.innerHTML='✓';});}
 
   // ── Date display ─────────────────────────────────────────────────
   const d = new Date();
@@ -634,8 +715,59 @@
   function toggleHabit(el) {
     el.classList.toggle('checked');
     el.querySelector('.habit-checkbox').innerHTML = el.classList.contains('checked') ? '✓' : '';
-    updateProgress();
+    const log=ls(HABIT_LOG_KEY,{});const id=el.id;if(!log[id])log[id]=[];
+    if(el.classList.contains('checked')){if(!log[id].includes(TODAY))log[id].push(TODAY);}
+    else{log[id]=log[id].filter(d=>d!==TODAY);}
+    lsSet(HABIT_LOG_KEY,log);renderHabitStats();updateProgress();
   }
+
+  function renderHabitStats(){
+    const log=ls(HABIT_LOG_KEY,{});const week=lastNDays(7);
+    HABIT_IDS.forEach(id=>{
+      const dates=log[id]||[];const dateSet=new Set(dates);
+      let streak=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);if(dateSet.has(ds))streak++;else break;}
+      const badge=document.getElementById('streak-'+id);
+      if(badge){badge.textContent=streak>0?'🔥 '+streak+(streak===1?' day':' days'):'— 0 days';badge.classList.toggle('zero',streak===0);}
+      const dotsEl=document.getElementById('dots-'+id);
+      if(dotsEl){dotsEl.innerHTML='';week.forEach((day,i)=>{const dot=document.createElement('div');dot.className='week-dot';if(dateSet.has(day))dot.classList.add('done');else if(i===6)dot.classList.add('today-empty');dotsEl.appendChild(dot);});}
+    });
+  }
+
+  function toggleLowStock(e,name,btnId){
+    e.stopPropagation();
+    const low=ls(LOW_STOCK_KEY,[]);const idx=low.indexOf(name);
+    if(idx===-1)low.push(name);else low.splice(idx,1);
+    lsSet(LOW_STOCK_KEY,low);renderLowStock();
+  }
+  function renderLowStock(){
+    const low=ls(LOW_STOCK_KEY,[]);
+    document.querySelectorAll('.low-stock-btn').forEach(btn=>{
+      const m=btn.getAttribute('onclick').match(/'([^']+)','ls-/);
+      if(m){const isLow=low.includes(m[1]);btn.classList.toggle('low',isLow);btn.textContent=isLow?'Low stock':'Mark low stock';}
+    });
+    const banner=document.getElementById('lowStockBanner');const list=document.getElementById('lowStockList');
+    if(low.length>0){banner.classList.add('visible');list.innerHTML=low.map(n=>'• '+n).join('<br>');}
+    else{banner.classList.remove('visible');}
+  }
+
+  // Fasting
+  let fastingInterval=null;
+  function saveFastingGoal(){lsSet(FAST_GOAL_KEY,parseInt(document.getElementById('fastingGoal').value));}
+  function fastingStart(){lsSet(FAST_KEY,{startTime:Date.now()});tickFasting();fastingInterval=setInterval(tickFasting,1000);}
+  function fastingStop(){lsSet(FAST_KEY,null);clearInterval(fastingInterval);document.getElementById('fastingTimer').textContent='00:00:00';document.getElementById('fastingTimer').classList.remove('goal-reached');document.getElementById('fastingStatus').textContent='Fast ended';document.getElementById('fastingFill').style.width='0%';document.getElementById('fastingFill').classList.remove('done');document.getElementById('fastingStartBtn').className='fasting-btn start';document.getElementById('fastingStopBtn').className='fasting-btn disabled';}
+  function tickFasting(){
+    const state=ls(FAST_KEY);if(!state){fastingStop();return;}
+    const goal=ls(FAST_GOAL_KEY,16);document.getElementById('fastingGoal').value=goal;
+    const elapsed=Date.now()-state.startTime,goalMs=goal*3600000,pct=Math.min(100,elapsed/goalMs*100);
+    const hrs=Math.floor(elapsed/3600000),mins=Math.floor((elapsed%3600000)/60000),secs=Math.floor((elapsed%60000)/1000);
+    const timerEl=document.getElementById('fastingTimer');timerEl.textContent=pad(hrs)+':'+pad(mins)+':'+pad(secs);
+    const goalReached=elapsed>=goalMs;timerEl.classList.toggle('goal-reached',goalReached);
+    const remaining=Math.max(0,goalMs-elapsed),rh=Math.floor(remaining/3600000),rm=Math.floor((remaining%3600000)/60000);
+    document.getElementById('fastingStatus').textContent=goalReached?'🎉 Goal reached! '+pad(hrs)+'h '+pad(mins)+'m fasted':'Goal: '+goal+'h · '+rh+'h '+pad(rm)+'m remaining';
+    const fill=document.getElementById('fastingFill');fill.style.width=pct+'%';fill.classList.toggle('done',goalReached);
+    document.getElementById('fastingStartBtn').className='fasting-btn disabled';document.getElementById('fastingStopBtn').className='fasting-btn stop';
+  }
+  function initFasting(){const goal=ls(FAST_GOAL_KEY,16);document.getElementById('fastingGoal').value=goal;const state=ls(FAST_KEY);if(state&&state.startTime){tickFasting();fastingInterval=setInterval(tickFasting,1000);}}
 
   // ── Take All button ───────────────────────────────────────────────
   function takeAll(blockClass, btn) {
@@ -665,12 +797,8 @@
   }
 
   // ── Ashwagandha Cycle Tracker ────────────────────────────────────
-  function loadAshwa() {
-    try { return JSON.parse(localStorage.getItem(ASHWA_KEY)) || null; } catch { return null; }
-  }
-  function saveAshwa(data) {
-    localStorage.setItem(ASHWA_KEY, JSON.stringify(data));
-  }
+  function loadAshwa(){return ls(ASHWA_KEY);}
+  function saveAshwa(data){lsSet(ASHWA_KEY,data);}
 
   function daysBetween(dateStr) {
     const start = new Date(dateStr);
@@ -785,14 +913,12 @@
   }
 
   // ── Init ─────────────────────────────────────────────────────────
-  restoreState(loadState());
+  restoreState();
   renderAshwa();
+  renderHabitStats();
+  renderLowStock();
+  initFasting();
   updateProgress();
-
-  // ── Service Worker ───────────────────────────────────────────────
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
 </script>
 </body>
 </html>
